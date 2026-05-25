@@ -156,6 +156,7 @@
     <div id="tree"><div class="loader">Yükleniyor...</div></div>
 
     <script>
+        // Neocities adresinin sonuna / koyuyoruz, yolları temizlerken baştaki / işaretlerini sileceğiz
         const NEOCITIES_URL = 'https://egesite.neocities.org/';
         let allFiles = [];      
         let currentPath = '';   
@@ -201,8 +202,11 @@
                 if (data && data.files) {
                     allFiles = data.files.map(f => {
                         let path = f.path;
+                        // Orijinal verideki sorunlu yerleri kesin olarak temizle
                         path = path.replace('https://egemenmaden67-dotcom.github.io/dosyagezgini/', '');
                         path = path.replace('file:///C:/Users/egeme/Downloads/', '');
+                        // Yolun en başında / kalmışsa onu sil (çift slash hatasını önler)
+                        path = path.replace(/^\//, '');
                         return { ...f, path: path };
                     });
                     renderFolder();
@@ -256,6 +260,7 @@
             const tree = document.getElementById('tree');
             tree.innerHTML = ''; 
             renderBreadcrumb();
+
             let itemsToShow = [];
             if (searchQuery) {
                 itemsToShow = allFiles.filter(f => f.path.toLowerCase().includes(searchQuery));
@@ -267,19 +272,23 @@
                     return remainingPath.length > 0 && !remainingPath.includes('/');
                 });
             }
+
             itemsToShow.sort((a, b) => {
                 if (a.is_directory && !b.is_directory) return -1;
                 if (!a.is_directory && b.is_directory) return 1;
                 return a.path.localeCompare(b.path);
             });
+
             if (itemsToShow.length === 0) {
                 tree.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 1rem; padding: 2rem;">Klasör boş veya sonuç bulunamadı.</div>';
                 return;
             }
+
             itemsToShow.forEach((f, index) => {
                 const card = document.createElement('div');
                 card.className = 'file-card';
-                card.style.animationDelay = `${index * 0.01}s`; 
+                card.style.animationDelay = `${index * 0.03}s`; 
+
                 card.onclick = () => {
                     if (f.is_directory) {
                         currentPath = f.path;
@@ -287,34 +296,41 @@
                         document.getElementById('search-input').value = '';
                         renderFolder();
                     } else {
+                        // Tam ve tertemiz Neocities bağlantısına yönlendirme
                         window.top.location.href = NEOCITIES_URL + f.path; 
                     }
                 };
+
                 const icon = document.createElement('div');
                 icon.className = 'file-icon';
                 icon.innerText = getIcon(f.path, f.is_directory);
-                const name = document.createElement('div');
-                icon.className = 'file-icon';
-                icon.innerText = getIcon(f.path, f.is_directory);
+
                 const nameEl = document.createElement('div');
                 nameEl.className = 'file-name';
                 nameEl.innerText = f.path.split('/').pop();
+
                 const details = document.createElement('div');
                 details.className = 'file-details';
+
                 const size = document.createElement('div');
                 size.className = 'file-size';
                 size.innerText = f.is_directory ? 'Klasör' : formatBytes(f.size);
+
                 const date = document.createElement('div');
                 date.className = 'file-date';
                 date.innerText = formatDate(f.updated_at);
+
                 details.appendChild(size);
                 details.appendChild(date);
+                
                 card.appendChild(icon);
                 card.appendChild(nameEl);
                 card.appendChild(details);
+                
                 tree.appendChild(card);
             });
         }
+        
         loadData();
     </script>
 </body>
