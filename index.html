@@ -30,7 +30,6 @@
             min-height: 100vh;
         }
 
-        /* Üst alanın düzeni */
         .controls-container {
             width: 100%;
             max-width: 1200px;
@@ -294,7 +293,11 @@
                         document.getElementById('search-input').value = '';
                         renderFolder();
                     } else {
-                        window.top.location.href = NEOCITIES_URL + f.path; 
+                        // 🚀 URL REGEX DÜZELTMESİ: GitHub adresini yakalayıp doğrudan Neocities URL'ine dönüştürüyoruz
+                        let originalPath = f.path; 
+                        let cleanPath = originalPath.replace('https://egemenmaden67-dotcom.github.io/dosyagezgini/', NEOCITIES_URL);
+                        
+                        window.top.location.href = cleanPath; 
                     }
                 };
 
