@@ -200,8 +200,10 @@
                 
                 if (data && data.files) {
                     allFiles = data.files.map(f => {
-                        let cleanPath = f.path.replace('file:///C:/Users/egeme/Downloads/', '');
-                        return { ...f, path: cleanPath };
+                        let path = f.path;
+                        path = path.replace('https://egemenmaden67-dotcom.github.io/dosyagezgini/', '');
+                        path = path.replace('file:///C:/Users/egeme/Downloads/', '');
+                        return { ...f, path: path };
                     });
                     renderFolder();
                 } else {
@@ -292,8 +294,11 @@
                 icon.className = 'file-icon';
                 icon.innerText = getIcon(f.path, f.is_directory);
                 const name = document.createElement('div');
-                name.className = 'file-name';
-                name.innerText = f.path.split('/').pop();
+                icon.className = 'file-icon';
+                icon.innerText = getIcon(f.path, f.is_directory);
+                const nameEl = document.createElement('div');
+                nameEl.className = 'file-name';
+                nameEl.innerText = f.path.split('/').pop();
                 const details = document.createElement('div');
                 details.className = 'file-details';
                 const size = document.createElement('div');
@@ -305,7 +310,7 @@
                 details.appendChild(size);
                 details.appendChild(date);
                 card.appendChild(icon);
-                card.appendChild(name);
+                card.appendChild(nameEl);
                 card.appendChild(details);
                 tree.appendChild(card);
             });
