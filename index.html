@@ -5,29 +5,329 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Egesite Pro Gezgini</title>
     <style>
-        html, body {
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght=300;500;700&display=swap');
+
+        :root {
+            --bg-color: #0b0f19;
+            --glass-bg: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --neon-blue: #00f0ff;
+            --neon-glow: rgba(0, 240, 255, 0.4);
+            --neon-purple: #8a2be2;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, #1a1525, var(--bg-color));
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
             margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b0f19;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        iframe {
+
+        /* Üst alanın düzeni */
+        .controls-container {
             width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
+            max-width: 1200px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
+
+        .breadcrumb {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .breadcrumb-item:hover { color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-glow); }
+        .breadcrumb-item.active { color: var(--neon-blue); font-weight: 700; cursor: default; }
+
+        .search-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            width: 250px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .search-box:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-glow);
+            width: 300px;
+        }
+
+        #tree {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .file-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--neon-blue);
+            background: rgba(30, 41, 59, 0.7);
+            box-shadow: 0 15px 30px var(--neon-glow);
+        }
+
+        .file-icon { font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+        
+        .file-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            word-break: break-word;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .file-size { font-size: 0.85rem; color: var(--neon-blue); font-weight: 500; background: rgba(0, 240, 255, 0.1); padding: 3px 10px; border-radius: 12px; }
+        .file-date { font-size: 0.75rem; color: var(--text-muted); }
+
+        .loader { grid-column: 1 / -1; text-align: center; font-size: 1.2rem; color: var(--text-muted); margin-top: 3rem; }
     </style>
 </head>
 <body>
+    
+    <div class="controls-container">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <input type="text" id="search-input" class="search-box" placeholder="Dosya veya klasör ara..." onkeyup="handleSearch()">
+    </div>
 
-    <!-- src kısmına kendi canlı GitHub Pages linkini yapıştır -->
-    <iframe 
-        src="https://KULLANICI_ADIN.github.io/DEPO_ADIN/" 
-        sandbox="allow-scripts allow-same-origin allow-top-navigation allow-forms">
-    </iframe>
+    <div id="tree"><div class="loader">Yükleniyor...</div></div>
 
+    <script>
+        const NEOCITIES_URL = 'https://egesite.neocities.org/';
+
+        let allFiles = [];      
+        let currentPath = '';   
+        let searchQuery = '';
+
+        function getIcon(filename, isDir) {
+            if (isDir) return '🗂️';
+            const ext = filename.split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'html': return '🌐';
+                case 'css': return '🎨';
+                case 'js': return '⚡';
+                case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': case 'webp': return '🖼️';
+                case 'json': return '⚙️';
+                case 'txt': case 'md': return '📝';
+                case 'mp3': case 'wav': return '🎧';
+                case 'mp4': case 'webm': return '🎬';
+                case 'pdf': return '📕';
+                case 'zip': case 'rar': return '📦';
+                default: return '📄';
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Bilinmiyor';
+            const options = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleDateString('tr-TR', options);
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('https://cagiri.vercel.app/api/files');
+                const data = await response.json();
+                
+                if (data && data.files) {
+                    allFiles = data.files;
+                    renderFolder();
+                } else {
+                    document.getElementById('tree').innerHTML = '<div class="loader">Veri formatı hatalı.</div>';
+                }
+            } catch (error) {
+                console.error("Hata:", error);
+                document.getElementById('tree').innerHTML = '<div class="loader">Veriler yüklenirken bir sorun oluştu.</div>';
+            }
+        }
+
+        function renderBreadcrumb() {
+            const bcContainer = document.getElementById('breadcrumb');
+            bcContainer.innerHTML = '';
+
+            const rootItem = document.createElement('span');
+            rootItem.className = currentPath === '' ? 'breadcrumb-item active' : 'breadcrumb-item';
+            rootItem.innerText = 'Ana Dizin';
+            rootItem.onclick = () => { currentPath = ''; searchQuery = ''; document.getElementById('search-input').value = ''; renderFolder(); };
+            bcContainer.appendChild(rootItem);
+
+            if (currentPath !== '') {
+                const parts = currentPath.split('/');
+                let buildPath = '';
+                
+                parts.forEach((part, index) => {
+                    const separator = document.createElement('span');
+                    separator.innerText = ' / ';
+                    separator.style.color = 'var(--text-muted)';
+                    bcContainer.appendChild(separator);
+
+                    buildPath += (buildPath === '' ? '' : '/') + part;
+                    const pathItem = document.createElement('span');
+                    pathItem.innerText = part;
+                    
+                    if (index === parts.length - 1) {
+                        pathItem.className = 'breadcrumb-item active';
+                    } else {
+                        pathItem.className = 'breadcrumb-item';
+                        const targetPath = buildPath;
+                        pathItem.onclick = () => { currentPath = targetPath; searchQuery = ''; document.getElementById('search-input').value = ''; renderFolder(); };
+                    }
+                    bcContainer.appendChild(pathItem);
+                });
+            }
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('search-input').value.toLowerCase();
+            renderFolder();
+        }
+
+        function renderFolder() {
+            const tree = document.getElementById('tree');
+            tree.innerHTML = ''; 
+            renderBreadcrumb();
+
+            let itemsToShow = [];
+
+            if (searchQuery) {
+                itemsToShow = allFiles.filter(f => f.path.toLowerCase().includes(searchQuery));
+            } else {
+                const prefix = currentPath ? currentPath + '/' : '';
+                itemsToShow = allFiles.filter(f => {
+                    if (!f.path.startsWith(prefix)) return false;
+                    const remainingPath = f.path.substring(prefix.length);
+                    return remainingPath.length > 0 && !remainingPath.includes('/');
+                });
+            }
+
+            itemsToShow.sort((a, b) => {
+                if (a.is_directory && !b.is_directory) return -1;
+                if (!a.is_directory && b.is_directory) return 1;
+                return a.path.localeCompare(b.path);
+            });
+
+            if (itemsToShow.length === 0) {
+                tree.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 1rem; padding: 2rem;">Klasör boş veya sonuç bulunamadı.</div>';
+                return;
+            }
+
+            itemsToShow.forEach((f, index) => {
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.style.animationDelay = `${index * 0.01}s`; 
+
+                card.onclick = () => {
+                    if (f.is_directory) {
+                        currentPath = f.path;
+                        searchQuery = '';
+                        document.getElementById('search-input').value = '';
+                        renderFolder();
+                    } else {
+                        window.top.location.href = NEOCITIES_URL + f.path; 
+                    }
+                };
+
+                const icon = document.createElement('div');
+                icon.className = 'file-icon';
+                icon.innerText = getIcon(f.path, f.is_directory);
+
+                const name = document.createElement('div');
+                name.className = 'file-name';
+                name.innerText = f.path.split('/').pop();
+
+                const details = document.createElement('div');
+                details.className = 'file-details';
+
+                const size = document.createElement('div');
+                size.className = 'file-size';
+                size.innerText = f.is_directory ? 'Klasör' : formatBytes(f.size);
+
+                const date = document.createElement('div');
+                date.className = 'file-date';
+                date.innerText = formatDate(f.updated_at);
+
+                details.appendChild(size);
+                details.appendChild(date);
+
+                card.appendChild(icon);
+                card.appendChild(name);
+                card.appendChild(details);
+                tree.appendChild(card);
+            });
+        }
+
+        loadData();
+    </script>
 </body>
 </html>
